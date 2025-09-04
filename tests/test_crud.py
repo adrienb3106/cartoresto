@@ -1,82 +1,66 @@
 import sys
 import os
-from datetime import datetime
 
-# Ajouter backend/ au PYTHONPATH
+# Ajouter backend/ au PYTHONPATH pour importer db.py
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "backend"))
-
 from db import get_connection
 
-
-def insert_restaurant(nom, adresse, ville, note, description):
-    conn = get_connection()
-    cursor = conn.cursor()
-    sql = """
-        INSERT INTO restaurants (nom, adresse, ville, note, description)
-        VALUES (%s, %s, %s, %s, %s)
-    """
-    cursor.execute(sql, (nom, adresse, ville, note, description))
-    conn.commit()
-    inserted_id = cursor.lastrowid
-    conn.close()
-    return inserted_id
-
-
-def get_restaurant(resto_id):
+def test_crud():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM restaurants WHERE id = %s", (resto_id,))
-    resto = cursor.fetchone()
-    conn.close()
-    return resto
-
-
-def update_restaurant(resto_id, new_note):
-    conn = get_connection()
-    cursor = conn.cursor()
-    sql = "UPDATE restaurants SET note = %s WHERE id = %s"
-    cursor.execute(sql, (new_note, resto_id))
-    conn.commit()
-    affected = cursor.rowcount
-    conn.close()
-    return affected
-
-
-def delete_restaurant(resto_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM restaurants WHERE id = %s", (resto_id,))
-    conn.commit()
-    affected = cursor.rowcount
-    conn.close()
-    return affected
-
-
-def test_crud():
-    print("Test INSERT")
-    resto_id = insert_restaurant(
-        "Test Resto",
-        "123 Rue de Python",
-        "Toulouse",
-        7,
-        "Restaurant inséré pour test CRUD"
-    )
-    print(f"Restaurant inséré avec id={resto_id}")
-
-    print("\nTest UPDATE")
-    update_restaurant(resto_id, 9)
-    resto_updated = get_restaurant(resto_id)
-    print(f"Après mise à jour : note={resto_updated['note']}")
     
-    print("\nTest SELECT")
-    resto = get_restaurant(resto_id)
-    print(f"Récupéré : {resto}")
+    # ===== 1Ajouter un nouveau restaurant =====
+    cursor.execute("""
+        INSERT INTO localisation (ville, code_postal, pays, latitude, longitude)
+        VALUES (%s, %s, %s, %s, %s)
+    """, ("Toulouse", "31000", "France", 43.6045, 1.444))
+    localisation_id = cursor.lastrowid
 
-    print("\nTest DELETE")
-    delete_restaurant(resto_id)
-    resto_deleted = get_restaurant(resto_id)
-    print(f"Après suppression, SELECT renvoie : {resto_deleted}")
+    cursor.execute("""
+        INSERT INTO informations (category, note, description, review)
+        VALUES (%s, %s, %s, %s)
+    """, ("Français", 7, "Restaurant test unique", "Bon accueil"))
+    informations_id = cursor.lastrowid
 
+    cursor.execute("""
+        INSERT INTO restaurants (nom, adresse, localisation_id, informations_id)
+        VALUES (%s, %s, %s, %s)
+    """, ("Le Test Resto", "5 Rue Exemple", localisation_id, informations_id))
+    
+    restaurant_id = cursor.lastrowid
+    conn.commit()
+    print(f"Restaurant ajouté avec id={restaurant_id}")
 
+    # ===== 2Modifier la note et le pays =====
+    cursor.execute("UPDATE informations SET note=%s WHERE id=%s", (9, informations_id))
+    cursor.execute("UPDATE localisation SET pays=%s WHERE id=%s", ("Espagne", localisation_id))
+    conn.commit()
+    print("Note et pays modifiés.")
+
+    # ===== Afficher le restaurant =====
+    cursor.execute("""
+        SELECT r.id, r.nom, r.adresse,
+               i.category, i.note, i.description, i.review,
+               l.ville, l.code_postal, l.pays, l.latitude, l.longitude
+        FROM restaurants r
+        JOIN informations i ON r.informations_id = i.id
+        JOIN localisation l ON r.localisation_id = l.id
+        WHERE r.id=%s
+    """, (restaurant_id,))
+    
+    resto = cursor.fetchone()
+    print("Restaurant après update:")
+    print(resto)
+
+    # ===== Supprimer le restaurant =====
+    cursor.execute("DELETE FROM restaurants WHERE id=%s", (restaurant_id,))
+    cursor.execute("DELETE FROM localisation WHERE id=%s", (localisation_id,))
+    cursor.execute("DELETE FROM informations WHERE id=%s", (informations_id,))
+    conn.commit()
+    print(f"Restaurant id={restaurant_id} supprimé.")
+
+    conn.close()
+
+# Lancer le test
 if __name__ == "__main__":
     test_crud()
