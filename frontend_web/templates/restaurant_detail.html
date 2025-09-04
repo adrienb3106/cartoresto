@@ -2,16 +2,26 @@
 
 {% block content %}
 <h1>{{ restaurant.nom }}</h1>
-<p>Catégorie : {{ restaurant.informations.category }}</p>
-<p>Note : {{ restaurant.informations.note }}/10</p>
-<p>Adresse : {{ restaurant.localisation.ville }}, {{ restaurant.localisation.pays }}</p>
 
-<!-- Div pour la map -->
-<div id="map" style="height: 400px; width: 100%; margin-top: 20px;"></div>
+<div style="display: flex; gap: 20px;">
+    <!-- Colonne gauche : infos restaurant -->
+    <div style="flex: 1;">
+        <p>Catégorie : {{ restaurant.informations.category }}</p>
+        <p>Note : {{ restaurant.informations.note }}/10</p>
+        <p>Adresse : {{ restaurant.adresse }}, {{ restaurant.localisation.ville }}, {{ restaurant.localisation.pays }}</p>
+        {% if restaurant.informations.review %}
+            <p>Review : {{ restaurant.informations.review }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Colonne droite : carte -->
+    <div style="flex: 2;">
+        <div id="map" style="height: 500px; width: 100%;"></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<!-- Leaflet CSS et JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -21,12 +31,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const lng = {{ restaurant.localisation.longitude }};
     const map = L.map('map').setView([lat, lng], 15);
 
-    // Ajouter les tuiles OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Ajouter un marqueur
     L.marker([lat, lng])
      .addTo(map)
      .bindPopup('<b>{{ restaurant.nom }}</b><br>{{ restaurant.informations.category }}')

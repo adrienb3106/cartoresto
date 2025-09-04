@@ -6,24 +6,37 @@
 <!-- Lien vers le formulaire -->
 <p><a href="/add-restaurant" style="font-weight:bold; color:#007bff;">➕ Ajouter un restaurant</a></p>
 
+<div style="display: flex; gap: 20px;">
+    <!-- Colonne gauche : liste + recherche -->
+    <div style="flex: 1;">
+        <!-- Barre de recherche -->
+        <form id="searchForm">
+            <input type="text" id="searchInput" placeholder="Rechercher un restaurant" style="width: 100%; margin-bottom: 10px;">
+            <button type="submit" style="width: 100%;">Rechercher</button>
+        </form>
 
-<!-- Barre de recherche -->
-<form id="searchForm">
-    <input type="text" id="searchInput" placeholder="Rechercher un restaurant">
-    <button type="submit">Rechercher</button>
-</form>
+        <!-- Liste des restaurants -->
+        <ul id="restaurantList" style="list-style: none; padding: 0;">
+            {% for r in restaurants %}
+            <li style="margin-bottom: 5px;"><a href="/restaurant/{{ r.id }}">{{ r.nom }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 
-<!-- Liste des restaurants -->
-<ul id="restaurantList">
-    {% for r in restaurants %}
-    <li><a href="/restaurant/{{ r.id }}">{{ r.nom }}</a></li>
-    {% endfor %}
-</ul>
+    <!-- Colonne droite : carte -->
+    <div style="flex: 2;">
+        <div id="map-all" style="height: 600px; width: 100%;"></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    // ===== Recherche =====
     const form = document.getElementById("searchForm");
     const input = document.getElementById("searchInput");
     const list = document.getElementById("restaurantList");
@@ -46,6 +59,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             data.forEach(r => {
                 const li = document.createElement("li");
+                li.style.marginBottom = "5px";
                 li.innerHTML = `<a href="/restaurant/${r.id}">${r.nom}</a>`;
                 list.appendChild(li);
             });
@@ -54,6 +68,19 @@ document.addEventListener("DOMContentLoaded", function() {
             list.innerHTML = "<li>Erreur lors de la recherche</li>";
         }
     });
+
+    // ===== Carte =====
+    const map = L.map('map-all').setView([48.8566, 2.3522], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    {% for r in restaurants %}
+        L.marker([{{ r.localisation.latitude }}, {{ r.localisation.longitude }}])
+         .addTo(map)
+         .bindPopup('<b>{{ r.nom }}</b><br>{{ r.informations.category }}');
+    {% endfor %}
 });
 </script>
 {% endblock %}

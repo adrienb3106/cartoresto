@@ -54,12 +54,15 @@ def list_restaurants():
     return crud.get_restaurants()
 
 # Détails d'un restaurant
-@app.get("/restaurants/{resto_id}")
-def read_restaurant(resto_id: int):
+@app.get("/restaurant/{resto_id}")
+def restaurant_detail(request: Request, resto_id: int):
     resto = crud.get_restaurant(resto_id)
     if not resto:
         raise HTTPException(status_code=404, detail="Restaurant non trouvé")
-    return resto
+    return templates.TemplateResponse("restaurant_detail.html", {
+        "request": request,
+        "restaurant": resto
+    })
 
 # Création d'un restaurant avec géocodage et validation note
 @app.post("/restaurants")
@@ -92,6 +95,13 @@ def create_restaurant(resto: dict = Body(...)):
 @app.get("/add-restaurant")
 def add_restaurant_page(request: Request):
     return templates.TemplateResponse("add_restaurant.html", {"request": request})
+
+# Carte a l'accueuil
+@app.get("/")
+def home(request: Request):
+    restaurants = crud.get_restaurants()
+    return templates.TemplateResponse("index.html", {"request": request, "restaurants": restaurants})
+
 
 # Mise à jour
 @app.put("/restaurants/{resto_id}")
