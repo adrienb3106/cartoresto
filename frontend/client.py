@@ -1,79 +1,148 @@
 import requests
 
-BASE_URL = "http://127.0.0.1:8000"  # adresse de ton API FastAPI
+BASE_URL = "http://127.0.0.1:8000/restaurants"
 
-def lister_restaurants():
-    response = requests.get(f"{BASE_URL}/restaurants")
-    if response.status_code == 200:
-        restos = response.json()
-        if not restos:
-            print("Aucun restaurant trouvé.")
-        else:
-            for r in restos:
-                print(f"{r['id']}: {r['nom']} ({r['ville']}) - Note: {r['note']}")
+def list_restaurants():
+    resp = requests.get(BASE_URL)
+    if resp.ok:
+        print("\n--- Liste des restaurants ---")
+        for r in resp.json():
+            info = r.get("informations", {})
+            loc = r.get("localisation", {})
+            print(f"{r.get('id', '-')}: {r.get('nom', '-')}"
+                  f" - {r.get('adresse', '-')}"
+                  f" - Note: {info.get('note', '-')}"
+                  f", Pays: {loc.get('pays', '-')}")
     else:
-        print("Erreur :", response.status_code)
+        print("Erreur:", resp.status_code, resp.text)
+        
+def read_restaurant(resto_id):
+    resp = requests.get(f"{BASE_URL}/{resto_id}")
+    if resp.ok:
+        print("\n--- Information restaurant ---")
+        r = resp.json()
+        info = r.get("informations", {})
+        loc = r.get("localisation", {})
+        print(f"{r.get('nom', '-')}\n"
+        f"{r.get('adresse', '-')}"
+        f",{loc.get('ville', '-')}\n"
+        f"- Note: {info.get('note', '-')}\n"
+        f"- Description: {info.get('description', '-')}"
+        )
+    else:
+        print("Erreur:", resp.status_code, resp.text)
 
-def ajouter_restaurant():
-    nom = input("Nom du restaurant : ")
-    adresse = input("Adresse : ")
-    ville = input("Ville : ")
-    note = int(input("Note (1-10) : "))
-    description = input("Description : ")
 
-    data = {
+def add_restaurant():
+    nom = input("Nom: ")
+    adresse = input("Adresse: ")
+    ville = input("Ville: ")
+    code_postal = input("Code postal: ")
+    pays = input("Pays: ")
+    category = input("Catégorie: ")
+    note = int(input("Note (0-10): "))
+    description = input("Description: ")
+
+    resto = {
         "nom": nom,
         "adresse": adresse,
-        "ville": ville,
-        "note": note,
-        "description": description
+        "localisation": {
+            "ville": ville,
+            "code_postal": code_postal,
+            "pays": pays,
+            "latitude": 0.0,
+            "longitude": 0.0
+        },
+        "informations": {
+            "category": category,
+            "note": note,
+            "description": description,
+            "review": None
+        }
     }
 
-    response = requests.post(f"{BASE_URL}/restaurants", json=data)
-    if response.status_code == 200:
-        print("Restaurant ajouté :", response.json())
-    else:
-        print("Erreur :", response.status_code, response.text)
+    resp = requests.post(BASE_URL, json=resto)
+    print(resp.json())
 
-def modifier_note():
-    resto_id = int(input("ID du restaurant à modifier : "))
-    note = int(input("Nouvelle note (1-10) : "))
-    response = requests.put(f"{BASE_URL}/restaurants/{resto_id}", params={"note": note})
-    if response.status_code == 200:
-        print(response.json())
-    else:
-        print("Erreur :", response.status_code, response.text)
+def update_restaurant():
+    resto_id = input("ID du restaurant à modifier: ")
 
-def supprimer_restaurant():
-    resto_id = int(input("ID du restaurant à supprimer : "))
-    response = requests.delete(f"{BASE_URL}/restaurants/{resto_id}")
-    if response.status_code == 200:
-        print(response.json())
-    else:
-        print("Erreur :", response.status_code, response.text)
+    print("Laissez vide pour ne pas modifier un champ.")
+    nom = input("Nouveau nom: ")
+    adresse = input("Nouvelle adresse: ")
+    ville = input("Nouvelle ville: ")
+    code_postal = input("Nouveau code postal: ")
+    pays = input("Nouveau pays: ")
+    note_input = input("Nouvelle note (0-10): ")
+    category = input("Nouvelle catégorie: ")
+    description = input("Nouvelle description: ")
+    review = input("Nouvelle review: ")
 
-def menu():
+    fields = {}
+
+    # Champs de restaurants
+    if nom: fields["nom"] = nom
+    if adresse: fields["adresse"] = adresse
+
+    # Champs localisation
+    loc = {}
+    if ville: loc["ville"] = ville
+    if code_postal: loc["code_postal"] = code_postal
+    if pays: loc["pays"] = pays
+    if loc: fields["localisation"] = loc
+
+    # Champs informations
+    info = {}
+    if note_input: info["note"] = int(note_input)
+    if category: info["category"] = category
+    if description: info["description"] = description
+    if review: info["review"] = review
+    if info: fields["informations"] = info
+
+    if not fields:
+        print("Aucun champ à mettre à jour.")
+        return
+
+    resp = requests.put(f"{BASE_URL}/{resto_id}", json=fields)
+    if resp.ok:
+        print("Restaurant mis à jour avec succès !")
+    else:
+        print("Erreur:", resp.status_code, resp.text)
+
+
+
+def delete_restaurant():
+    resto_id = int(input("ID du restaurant à supprimer: "))
+    resp = requests.delete(f"{BASE_URL}/{resto_id}")
+    print(resp.json())
+
+def main():
     while True:
-        print("\n--- Menu Client CartoResto ---")
+        print("\n--- Menu ---")
         print("1. Lister les restaurants")
         print("2. Ajouter un restaurant")
-        print("3. Modifier la note d'un restaurant")
+        print("3. Mettre à jour un restaurant")
         print("4. Supprimer un restaurant")
-        print("0. Quitter")
+        print("5. Quitter")
+        print("DEV : 6. Voir restaurant specifique.")
 
-        choix = input("Choix : ")
+        choix = input("Choix: ")
+
         if choix == "1":
-            lister_restaurants()
+            list_restaurants()
         elif choix == "2":
-            ajouter_restaurant()
+            add_restaurant()
         elif choix == "3":
-            modifier_note()
+            update_restaurant()
         elif choix == "4":
-            supprimer_restaurant()
-        elif choix == "0":
+            delete_restaurant()
+        elif choix == "5":
             break
+        elif choix == "6":
+            choix_id = input("resto id : ")
+            read_restaurant(choix_id)
         else:
-            print("Choix invalide")
+            print("Choix invalide.")
 
 if __name__ == "__main__":
-    menu()
+    main()

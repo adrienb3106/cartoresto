@@ -1,51 +1,15 @@
+from fastapi import FastAPI, HTTPException, Body
 import sys
 import os
-from dotenv import load_dotenv
-
-# ===== Charger le .env =====
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
-
-# ===== Ajouter le backend au PYTHONPATH =====
 sys.path.append(os.path.dirname(__file__))
-
-# ===== Import CRUD =====
+from models import Restaurant  # <-- on importe les models
 import crud
-
-# ===== FastAPI =====
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
 
 app = FastAPI(title="CartoResto API")
 
-# =========================
-# Modèles Pydantic
-# =========================
-class Localisation(BaseModel):
-    ville: str
-    code_postal: str
-    pays: str
-    latitude: float
-    longitude: float
-
-class Informations(BaseModel):
-    category: str
-    note: int
-    description: Optional[str] = None
-    review: Optional[str] = None
-
-class Restaurant(BaseModel):
-    nom: str
-    adresse: str
-    localisation: Localisation
-    informations: Informations
-
-# =========================
-# Endpoints
-# =========================
 @app.get("/restaurants")
 def list_restaurants():
-    return crud.read_restaurants()
+    return crud.get_restaurants()
 
 @app.get("/restaurants/{resto_id}")
 def read_restaurant(resto_id: int):
@@ -56,29 +20,23 @@ def read_restaurant(resto_id: int):
 
 @app.post("/restaurants")
 def create_restaurant(resto: Restaurant):
-    inserted_id = crud.create_restaurant(
-        nom=resto.nom,
-        adresse=resto.adresse,
-        ville=resto.localisation.ville,
-        code_postal=resto.localisation.code_postal,
-        pays=resto.localisation.pays,
-        latitude=resto.localisation.latitude,
-        longitude=resto.localisation.longitude,
-        category=resto.informations.category,
-        note=resto.informations.note,
-        description=resto.informations.description,
-        review=resto.informations.review
+    inserted_id = crud.add_restaurant(
+        resto.nom, resto.adresse,
+        resto.localisation.model_dump(),
+        resto.informations.model_dump()
     )
     return {"message": "Restaurant ajouté", "id": inserted_id}
 
 @app.put("/restaurants/{resto_id}")
-def update_restaurant(resto_id: int, note: int, pays: Optional[str] = None):
-    crud.update_restaurant(restaurant_id=resto_id, note=note)
-    if pays:
-        crud.update_restaurant_country(restaurant_id=resto_id, country=pays)
+def update_restaurant(resto_id: int, fields: dict = Body(...)):
+    affected = crud.update_restaurant(resto_id, fields)
+    if affected == 0:
+        raise HTTPException(status_code=404, detail="Restaurant non trouvé")
     return {"message": "Restaurant mis à jour"}
 
 @app.delete("/restaurants/{resto_id}")
 def delete_restaurant(resto_id: int):
-    crud.delete_restaurant(restaurant_id=resto_id)
+    affected = crud.delete_restaurant(resto_id)
+    if affected == 0:
+        raise HTTPException(status_code=404, detail="Restaurant non trouvé")
     return {"message": "Restaurant supprimé"}

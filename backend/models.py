@@ -1,21 +1,20 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class Localisation(BaseModel):
     ville: str
-    code_postal: str
-    pays: str
-    latitude: float
-    longitude: float
+    code_postal: str | None = None
+    pays: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 class Informations(BaseModel):
-    category: str
-    note: int
-    description: Optional[str] = None
-    review: Optional[str] = None
+    category: str | None = None
+    note: int | None = None
+    description: str | None = None
+    review: str | None = None
 
 class Restaurant(BaseModel):
     nom: str
-    adresse: str
+    adresse: str | None = None
     localisation: Localisation
     informations: Informations
