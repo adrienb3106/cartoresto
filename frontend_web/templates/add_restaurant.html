@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter un restaurant</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<h1>Ajouter un restaurant</h1>
+
+<form id="addForm">
+    <input type="text" id="nom" placeholder="Nom" required>
+    <input type="text" id="category" placeholder="Catégorie">
+    <input type="number" id="note" placeholder="Note (0-10)" min="0" max="10" required>
+    <input type="text" id="adresse" placeholder="Adresse complète" required>
+    <input type="text" id="ville" placeholder="Ville" required>
+    <input type="text" id="pays" placeholder="Pays" required>
+    <textarea id="description" placeholder="Description"></textarea>
+    <button type="submit">Ajouter</button>
+</form>
+
+<div id="message"></div>
+
+<script>
+document.getElementById("addForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        nom: document.getElementById("nom").value,
+        adresse: document.getElementById("adresse").value,
+        informations: {
+            category: document.getElementById("category").value,
+            note: parseFloat(document.getElementById("note").value),
+            description: document.getElementById("description").value
+        },
+        localisation: {
+            ville: document.getElementById("ville").value,
+            pays: document.getElementById("pays").value
+        }
+    };
+
+    try {
+        const res = await fetch("http://127.0.0.1:8000/restaurants", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        document.getElementById("message").style.color = "green";
+        document.getElementById("message").innerText = "Restaurant ajouté ! ID: " + data.id;
+        document.getElementById("addForm").reset();
+    } catch (err) {
+        console.error(err);
+        document.getElementById("message").style.color = "red";
+        document.getElementById("message").innerText = "Erreur : " + err.message;
+    }
+});
+</script>
+</body>
+</html>

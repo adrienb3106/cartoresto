@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ restaurant.nom }}</h1>
+<p>Catégorie : {{ restaurant.informations.category }}</p>
+<p>Note : {{ restaurant.informations.note }}/10</p>
+<p>Adresse : {{ restaurant.localisation.ville }}, {{ restaurant.localisation.pays }}</p>
+
+<!-- Div pour la map -->
+<div id="map" style="height: 400px; width: 100%; margin-top: 20px;"></div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet CSS et JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const lat = {{ restaurant.localisation.latitude }};
+    const lng = {{ restaurant.localisation.longitude }};
+    const map = L.map('map').setView([lat, lng], 15);
+
+    // Ajouter les tuiles OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Ajouter un marqueur
+    L.marker([lat, lng])
+     .addTo(map)
+     .bindPopup('<b>{{ restaurant.nom }}</b><br>{{ restaurant.informations.category }}')
+     .openPopup();
+});
+</script>
+{% endblock %}

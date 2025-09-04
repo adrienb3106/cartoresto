@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Restaurants</h1>
+
+<!-- Lien vers le formulaire -->
+<p><a href="/add-restaurant" style="font-weight:bold; color:#007bff;">➕ Ajouter un restaurant</a></p>
+
+
+<!-- Barre de recherche -->
+<form id="searchForm">
+    <input type="text" id="searchInput" placeholder="Rechercher un restaurant">
+    <button type="submit">Rechercher</button>
+</form>
+
+<!-- Liste des restaurants -->
+<ul id="restaurantList">
+    {% for r in restaurants %}
+    <li><a href="/restaurant/{{ r.id }}">{{ r.nom }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("searchInput");
+    const list = document.getElementById("restaurantList");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const query = input.value.trim();
+        if (!query) return;
+
+        try {
+            const res = await fetch(`http://127.0.0.1:8000/restaurants/search?name=${encodeURIComponent(query)}`);
+            if (!res.ok) throw new Error("Erreur réseau");
+            const data = await res.json();
+
+            list.innerHTML = "";
+            if (data.length === 0) {
+                list.innerHTML = "<li>Aucun restaurant trouvé</li>";
+                return;
+            }
+
+            data.forEach(r => {
+                const li = document.createElement("li");
+                li.innerHTML = `<a href="/restaurant/${r.id}">${r.nom}</a>`;
+                list.appendChild(li);
+            });
+        } catch (err) {
+            console.error(err);
+            list.innerHTML = "<li>Erreur lors de la recherche</li>";
+        }
+    });
+});
+</script>
+{% endblock %}
