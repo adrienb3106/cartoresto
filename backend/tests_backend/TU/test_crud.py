@@ -2,7 +2,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from backend.core.database import Base
+import backend.models as models
+from backend.core.database import Base, SessionLocal
 from backend import crud, schemas
 
 # --- DB SQLite in-memory ---
@@ -69,3 +70,10 @@ def test_delete_restaurant(db):
 
     deleted = crud.read_restaurant(db, resto.id)
     assert deleted is None
+
+def test_update_restaurant_not_found_unit():
+    db = SessionLocal()
+    resto = models.Restaurant(nom="Test", adresse="Test")
+    result = crud.update_restaurant(db, resto_id=9999, resto=resto)
+    assert result is None
+    db.close()

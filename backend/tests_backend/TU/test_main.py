@@ -116,3 +116,29 @@ def test_delete_restaurant():
     # Vérifie qu'il n'existe plus
     response = client.get("/restaurants/1")
     assert response.status_code == 404
+
+
+# Pour couverture de code car get_db est appelé implicitement
+def test_get_db_closes_session():
+    gen = get_db()
+    db = next(gen)
+    assert db is not None
+    try:
+        next(gen)  # force la fin du generator
+    except StopIteration:
+        pass
+
+    
+def test_read_restaurant_not_found():
+    response = client.get("/restaurants/9999")
+    assert response.status_code == 404
+    data = response.json()
+    assert data["detail"] == "Restaurant not found"
+
+
+def test_delete_restaurant_not_found():
+    response = client.delete("/restaurants/9999")
+    assert response.status_code == 404
+    data = response.json()
+    assert data["detail"] == "Restaurant not found"
+
