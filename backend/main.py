@@ -4,11 +4,21 @@ from backend.core.database import SessionLocal, engine
 import backend.models as models
 import backend.schemas as schemas
 import backend.crud as crud
+from fastapi.middleware.cors import CORSMiddleware
 
 # Création des tables si elles n'existent pas
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Autoriser le frontend à parler avec le backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # en dev, on autorise toutes les origines
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # --- Dépendance DB ---
