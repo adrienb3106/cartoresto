@@ -1,20 +1,60 @@
 from pydantic import BaseModel
+from typing import Optional
 
-class Localisation(BaseModel):
-    ville: str
-    code_postal: str | None = None
-    pays: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
+# --- Localisation ---
+class LocalisationBase(BaseModel):
+    ville: Optional[str] = None
+    code_postal: Optional[str] = None
+    pays: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
-class Informations(BaseModel):
-    category: str | None = None
-    note: int | None = None
-    description: str | None = None
-    review: str | None = None
+    class ConfigDict:
+        from_attributes = True
 
-class Restaurant(BaseModel):
+
+class LocalisationCreate(LocalisationBase):
+    pass
+
+
+class LocalisationRead(LocalisationBase):
+    id: int
+
+
+# --- Informations ---
+class InformationsBase(BaseModel):
+    category: Optional[str] = None
+    note: Optional[int] = None
+    description: Optional[str] = None
+    review: Optional[str] = None
+
+    class ConfigDict:
+        from_attributes = True
+
+
+class InformationsCreate(InformationsBase):
+    pass
+
+
+class InformationsRead(InformationsBase):
+    id: int
+
+
+# --- Restaurant ---
+class RestaurantBase(BaseModel):
     nom: str
-    adresse: str | None = None
-    localisation: Localisation
-    informations: Informations
+    adresse: Optional[str] = None
+
+
+class RestaurantCreate(RestaurantBase):
+    localisation: Optional[LocalisationCreate] = None
+    informations: Optional[InformationsCreate] = None
+
+
+class RestaurantRead(RestaurantBase):
+    id: int
+    localisation: Optional[LocalisationRead] = None
+    informations: Optional[InformationsRead] = None
+
+    class ConfigDict:
+        from_attributes = True

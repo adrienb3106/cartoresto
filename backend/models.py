@@ -6,9 +6,9 @@ class Localisation(Base):
     __tablename__ = "localisations"
 
     id = Column(Integer, primary_key=True, index=True)
-    ville = Column(String, nullable=False)
-    code_postal = Column(String, nullable=True)
-    pays = Column(String, nullable=True)
+    ville = Column(String(100), nullable=False)
+    code_postal = Column(String(10), nullable=True)
+    pays = Column(String(100), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
 
@@ -17,18 +17,18 @@ class Informations(Base):
     __tablename__ = "informations"
 
     id = Column(Integer, primary_key=True, index=True)
-    category = Column(String, nullable=True)
+    category = Column(String(100), nullable=True)
     note = Column(Integer, nullable=True)
     description = Column(String, nullable=True)
-    review = Column(String, nullable=True)
+    review = Column(String(1000), nullable=True)
 
 
 class Restaurant(Base):
     __tablename__ = "restaurants"
 
     id = Column(Integer, primary_key=True, index=True)
-    nom = Column(String, nullable=False)
-    adresse = Column(String, nullable=True)
+    nom = Column(String(100), nullable=False)
+    adresse = Column(String(255), nullable=True)
 
     # Clés étrangères vers les tables localisation et informations
     localisation_id = Column(Integer, ForeignKey("localisations.id"))

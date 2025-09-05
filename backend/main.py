@@ -1,11 +1,17 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from backend.core.database import SessionLocal, get_db
-from backend import crud, schemas
+from backend.core.database import SessionLocal, engine
+import backend.models as models
+import backend.schemas as schemas
+import backend.crud as crud
 
-app = FastAPI(title="Cartoresto API")
+# Création des tables si elles n'existent pas
+models.Base.metadata.create_all(bind=engine)
 
-# Dépendance DB
+app = FastAPI()
+
+
+# --- Dépendance DB ---
 def get_db():
     db = SessionLocal()
     try:
@@ -13,33 +19,39 @@ def get_db():
     finally:
         db.close()
 
-# CREATE
-@app.post("/restaurants/", response_model=schemas.Restaurant)
-def create_restaurant(resto: schemas.Restaurant, db: Session = Depends(get_db)):
+
+# --- Endpoints CRUD ---
+
+@app.post("/restaurants/", response_model=schemas.RestaurantRead)
+def create_restaurant(resto: schemas.RestaurantCreate, db: Session = Depends(get_db)):
     return crud.create_restaurant(db, resto)
 
-# READ ALL
-@app.get("/restaurants/", response_model=list[schemas.Restaurant])
-def read_restaurants(db: Session = Depends(get_db)):
-    return crud.get_restaurants(db)
 
-# READ ONE
-@app.get("/restaurants/{resto_id}", response_model=schemas.Restaurant)
+@app.get("/restaurants/", response_model=list[schemas.RestaurantRead])
+def read_restaurants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.read_restaurants(db, skip=skip, limit=limit)
+
+
+@app.get("/restaurants/{resto_id}", response_model=schemas.RestaurantRead)
 def read_restaurant(resto_id: int, db: Session = Depends(get_db)):
-    resto = crud.get_restaurant(db, resto_id)
-    if resto is None:
+    db_resto = crud.read_restaurant(db, resto_id)
+    if db_resto is None:
         raise HTTPException(status_code=404, detail="Restaurant not found")
-    return resto
+    return db_resto
 
-# UPDATE
-@app.put("/restaurants/{resto_id}", response_model=schemas.Restaurant)
-def update_restaurant(resto_id: int, fields: dict, db: Session = Depends(get_db)):
-    resto = crud.update_restaurant(db, resto_id, fields)
-    if resto is None:
+
+@app.put("/restaurants/{resto_id}", response_model=schemas.RestaurantRead)
+def update_restaurant(
+    resto_id: int,
+    resto: schemas.RestaurantCreate,
+    db: Session = Depends(get_db)
+):
+    db_resto = crud.update_restaurant(db, resto_id, resto)
+    if db_resto is None:
         raise HTTPException(status_code=404, detail="Restaurant not found")
-    return resto
+    return db_resto
 
-# DELETE
+
 @app.delete("/restaurants/{resto_id}")
 def delete_restaurant(resto_id: int, db: Session = Depends(get_db)):
     success = crud.delete_restaurant(db, resto_id)
